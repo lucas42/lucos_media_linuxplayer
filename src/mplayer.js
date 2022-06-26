@@ -12,6 +12,8 @@ async function updateCurrentAudio(data) {
 	const now = data.tracks[0];
 	const shouldPlay = data.isPlaying && localDevice.isCurrent();
 	if (shouldPlay) {
+		await setVolume(data.volume);
+
 		if (currentState.filename !== now.url) {
 			await changeTrack(now);
 		}
@@ -22,11 +24,6 @@ async function updateCurrentAudio(data) {
 			player.setOptions({pause: 0});
 		}
 
-		// mplayer's volume doesn't sound linear, so do some maths to try to get it feeling more normal.
-		// (Also it's volume is expressed as a percentage)
-		const normalisedVol = Math.pow(data.volume, 0.2) * 100;
-		player.volume(normalisedVol);
-		console.log(`Volume at ${normalisedVol}%`);
 	} else {
 		await pauseTrack();
 	}
@@ -51,6 +48,13 @@ async function pauseTrack() {
 	await manager.post("update");
 	currentState = {};
 	changing = false;
+}
+async function setVolume(volume) {
+	// mplayer's volume doesn't sound linear, so do some maths to try to get it feeling more normal.
+	// (Also it's volume is expressed as a percentage)
+	const normalisedVol = Math.pow(volume, 0.2) * 100;
+	player.volume(normalisedVol);
+	console.log(`Volume at ${normalisedVol}%`);
 }
 
 pubsub.listenExisting("managerData", updateCurrentAudio, true);
