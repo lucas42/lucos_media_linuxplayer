@@ -1,0 +1,13 @@
+version: '3'
+services:
+  linuxplayer:
+    build: .
+    container_name: lucos_media_linuxplayer
+    image: lucas42/lucos_media_linuxplayer
+    environment:
+      - MEDIA_MANAGER
+      - CLIENT_UUID
+      - CLIENT_NAME
+## Audio passthrough not supported on mac
+#    devices:
+#      - /dev/snd
