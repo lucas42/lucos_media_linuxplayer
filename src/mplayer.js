@@ -47,9 +47,11 @@ async function pauseTrack() {
 	changing = false;
 }
 async function setVolume(volume) {
+
 	// mplayer's volume doesn't sound linear, so do some maths to try to get it feeling more normal.
 	// (Also it's volume is expressed as a percentage)
 	const normalisedVol = Math.pow(volume, 0.2) * 100;
+	if (player.status.volume === normalisedVol) return;
 	player.volume(normalisedVol);
 	console.log(`Volume at ${normalisedVol}%`);
 }
