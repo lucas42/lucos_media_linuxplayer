@@ -12,10 +12,14 @@ async function updateCurrentAudio(data) {
 	const now = data.tracks[0];
 	const shouldPlay = data.isPlaying && localDevice.isCurrent();
 	if (shouldPlay) {
+		if (currentState.filename !== now.url) {
+			await changeTrack(now);
+		}
+		if (currentState.currentTime < now.currentTime) {
+			player.seek(now.currentTime);
+		}
 		if (!currentState.playing) {
-			playTrack(now);
-		} else if (getCurrentTrack() !== now.url) {
-			playTrack(now);
+			player.setOptions({pause: 0});
 		}
 
 		// mplayer's volume doesn't sound linear, so do some maths to try to get it feeling more normal.
@@ -24,10 +28,10 @@ async function updateCurrentAudio(data) {
 		player.volume(normalisedVol);
 		console.log(`Volume at ${normalisedVol}%`);
 	} else {
-		await stopTrack();
+		await pauseTrack();
 	}
 }
-function playTrack(track) {
+async function changeTrack(track) {
 	changing = true;
 
 	// Pause until seeking has occured to avoid a blip of audio
@@ -37,11 +41,11 @@ function playTrack(track) {
 	changing = false;
 	console.log(`Playing track ${track.url} from ${track.currentTime} seconds`);
 }
-async function stopTrack() {
+async function pauseTrack() {
 	if (!currentState.playing) return;
 	changing = true;
-	console.log(`Stopping Track`);
-	player.stop();
+	console.log(`Pausing Track`);
+	player.setOptions({pause: 1});
 
 	// Send the server an update to let it know how far the track progressed
 	await manager.post("update");
