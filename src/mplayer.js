@@ -44,7 +44,6 @@ async function stopTrack() {
 
 pubsub.listenExisting("managerData", updateCurrentAudio, true);
 player.on('status', newState => {
-	console.log("mplayer status update", newState);
 	currentState = newState;
 });
 player.on("stop", () => {
