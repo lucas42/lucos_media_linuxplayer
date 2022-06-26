@@ -17,9 +17,11 @@ async function updateCurrentAudio(data) {
 			playTrack(now);
 		}
 
-		// mplayer volume is a percentage, rather than out of 1
-		player.volume(data.volume * 100);
-		console.log(`Volume at ${data.volume * 100}%`);
+		// mplayer's volume doesn't sound linear, so do some maths to try to get it feeling more normal.
+		// (Also it's volume is expressed as a percentage)
+		const normalisedVol = Math.pow(data.volume, 0.2) * 100;
+		player.volume(normalisedVol);
+		console.log(`Volume at ${normalisedVol}%`);
 	} else {
 		await stopTrack();
 	}
