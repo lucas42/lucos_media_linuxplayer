@@ -21,7 +21,7 @@ async function updateCurrentAudio(data) {
 			player.seek(now.currentTime);
 		}
 		if (!currentState.playing) {
-			player.setOptions({pause: 0});
+			player.play();
 		}
 
 	} else {
@@ -30,11 +30,8 @@ async function updateCurrentAudio(data) {
 }
 async function changeTrack(track) {
 	changing = true;
-
-	// Pause until seeking has occured to avoid a blip of audio
-	player.openFile(track.url, {pause: 1});
-	player.seek(track.currentTime);
-	player.setOptions({pause: 0});
+	player.openFile(track.url);
+	if (track.currentTime > 0) player.seek(track.currentTime);
 	changing = false;
 	console.log(`Playing track ${track.url} from ${track.currentTime} seconds`);
 }
@@ -42,7 +39,7 @@ async function pauseTrack() {
 	if (!currentState.playing) return;
 	changing = true;
 	console.log(`Pausing Track`);
-	player.setOptions({pause: 1});
+	player.pause();
 
 	// Send the server an update to let it know how far the track progressed
 	await manager.post("update");
