@@ -19,6 +19,7 @@ async function updateCurrentAudio(data) {
 
 		// mplayer volume is a percentage, rather than out of 1
 		player.volume(data.volume * 100);
+		console.log(`Volume at ${data.volume * 100}%`);
 	} else {
 		await stopTrack();
 	}
