@@ -8,6 +8,5 @@ services:
       - MEDIA_MANAGER
       - CLIENT_UUID
       - CLIENT_NAME
-## Audio passthrough not supported on mac
-#    devices:
-#      - /dev/snd
+    devices:
+      - /dev/snd
