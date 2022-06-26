@@ -20,15 +20,22 @@ async function updateCurrentAudio(data) {
 		// mplayer volume is a percentage, rather than out of 1
 		player.volume(data.volume * 100);
 	} else {
-		console.log(`Stopping Track`);
-		currentState = {};
-		player.stop();
+		await stopTrack();
 	}
 }
 function playTrack(track) {
 	player.openFile(track.url);
 	player.seek(track.currentTime);
 	console.log(`Playing track ${track.url} from ${track.currentTime} seconds`);
+}
+async function stopTrack() {
+	if (!currentState.playing) return;
+	console.log(`Stopping Track`);
+	player.stop();
+
+	// Send the server an update to let it know how far the track progressed
+	await manager.post("update");
+	currentState = {};
 }
 
 pubsub.listenExisting("managerData", updateCurrentAudio, true);
