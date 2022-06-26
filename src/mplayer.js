@@ -6,6 +6,7 @@ const player = new MPlayer();
 
 let currentState = {};
 let timeElapsed = 0;
+let stopping = false; // Whether there's a track in stopping mode.
 
 async function updateCurrentAudio(data) {
 	const now = data.tracks[0];
@@ -36,12 +37,14 @@ function playTrack(track) {
 }
 async function stopTrack() {
 	if (!currentState.playing) return;
+	stopping = true;
 	console.log(`Stopping Track`);
 	player.stop();
 
 	// Send the server an update to let it know how far the track progressed
 	await manager.post("update");
 	currentState = {};
+	stopping = false;
 }
 
 pubsub.listenExisting("managerData", updateCurrentAudio, true);
@@ -49,6 +52,7 @@ player.on('status', newState => {
 	currentState = newState;
 });
 player.on("stop", () => {
+	if (stopping) return; // Ignore stops which were triggered by the server.
 	console.log(`Track Finished ${getCurrentTrack()}`);
 	manager.post("done", {track: getCurrentTrack(), status: "ended"});
 });
