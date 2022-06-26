@@ -41,13 +41,12 @@ player.on("stop", () => {
 	manager.post("done", {track: getCurrentTrack(), status: "ended"});
 });
 player.on("time", newTimeElapsed => {
-	console.log("timeElapsed update", timeElapsed, newTimeElapsed);
 	timeElapsed = newTimeElapsed;
 })
 
 /**
  * Returns the number of seconds into the current track
- * Based on last update from mplayer, which updates every 30 seconds.
+ * Based on last update from mplayer.
  */
 function getTimeElapsed() {
 	return timeElapsed;
