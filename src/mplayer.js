@@ -24,8 +24,11 @@ async function updateCurrentAudio(data) {
 	}
 }
 function playTrack(track) {
-	player.openFile(track.url);
+
+	// Pause until seeking has occured to avoid a blip of audio
+	player.openFile(track.url, {pause: 1});
 	player.seek(track.currentTime);
+	player.setOptions({pause: 0});
 	console.log(`Playing track ${track.url} from ${track.currentTime} seconds`);
 }
 async function stopTrack() {
