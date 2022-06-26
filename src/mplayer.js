@@ -4,7 +4,6 @@ const localDevice = require("./local-device");
 const MPlayer = require("mplayer");
 const player = new MPlayer();
 
-let currentState = {};
 let timeElapsed = 0;
 let changing = false; // Whether there's a track change in progress
 
@@ -14,13 +13,14 @@ async function updateCurrentAudio(data) {
 	if (shouldPlay) {
 		await setVolume(data.volume);
 
-		if (currentState.filename !== now.url) {
+		if (player.status.filename !== now.url) {
 			await changeTrack(now);
 		}
-		if (currentState.currentTime < now.currentTime) {
+		if (player.status.currentTime < now.currentTime) {
 			player.seek(now.currentTime);
 		}
-		if (!currentState.playing) {
+		if (!player.status.playing) {
+			console.log(`Unpausing Track`);
 			player.play();
 		}
 
@@ -36,14 +36,13 @@ async function changeTrack(track) {
 	console.log(`Playing track ${track.url} from ${track.currentTime} seconds`);
 }
 async function pauseTrack() {
-	if (!currentState.playing) return;
+	if (!player.status.playing) return;
 	changing = true;
 	console.log(`Pausing Track`);
 	player.pause();
 
 	// Send the server an update to let it know how far the track progressed
 	await manager.post("update");
-	currentState = {};
 	changing = false;
 }
 async function setVolume(volume) {
@@ -57,9 +56,6 @@ async function setVolume(volume) {
 }
 
 pubsub.listenExisting("managerData", updateCurrentAudio, true);
-player.on('status', newState => {
-	currentState = newState;
-});
 player.on("stop", () => {
 	if (changing) return; // Ignore stops which were triggered by the server.
 	console.log(`Track Finished ${getCurrentTrack()}`);
@@ -81,14 +77,14 @@ function getTimeElapsed() {
  * Returns the URL of the currently playing track
  */
 function getCurrentTrack() {
-	return currentState.filename;
+	return player.status.filename;
 }
 
 /**
  * Returns true if the player is current playing media
  */
 function isPlaying() {
-	return currentState.playing;
+	return player.status.playing;
 }
 
 manager.setUpdateFunctions(getTimeElapsed, getCurrentTrack);
