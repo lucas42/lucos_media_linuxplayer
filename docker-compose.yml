@@ -10,3 +10,4 @@ services:
       - CLIENT_NAME
     devices:
       - /dev/snd
+    restart: always
