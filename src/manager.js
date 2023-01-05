@@ -45,8 +45,12 @@ function _makeRequestToManager(endpoint, method, parameters={}) {
 	return fetch(url, {method})
 }
 
-function post(endpoint, parameters={}) {
-	_makeRequestToManager(endpoint, 'post', parameters);
+async function post(endpoint, parameters={}) {
+	try {
+		await _makeRequestToManager(endpoint, 'post', parameters);
+	} catch (error) {
+		console.error("Error posting to manager", endpoint, parameters, error);
+	}
 }
 
 async function getJson(endpoint, parameters={}) {
