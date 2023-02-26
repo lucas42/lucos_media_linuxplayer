@@ -5,20 +5,22 @@ workflows:
   version: 2
   build-deploy:
     jobs:
-      - lucos/build-arm:
+      - lucos/build-armv6l:
           context: docker
-      - lucos/deploy-xwing:
+      - lucos/deploy-teltak:
           context: docker
           requires:
-            - lucos/build-arm
+            - lucos/build-armv6l
           filters:
             branches:
               only:
                 - main
-      - lucos/deploy-teltak:
+      - lucos/build-armv7l:
+          context: docker
+      - lucos/deploy-xwing:
           context: docker
           requires:
-            - lucos/build-arm
+            - lucos/build-armv7l
           filters:
             branches:
               only:
