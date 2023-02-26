@@ -6,8 +6,7 @@ services:
     image: lucas42/lucos_media_linuxplayer
     environment:
       - MEDIA_MANAGER
-      - CLIENT_UUID
-      - CLIENT_NAME
+      - HOSTDOMAIN
     devices:
       - /dev/snd
     restart: always

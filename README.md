@@ -9,5 +9,4 @@ A browserless player for the lucos_media ecosystem
 ## Environment variables
 
 * _MEDIA_MANAGER_ The origin to use for calls to lucos_media_manager.  Defaults to the production instance.
-* _CLIENT_UUID_ A unique uuid for identifying this client.  Needs to be different for each deployment of the player.
-* _CLIENT_NAME_ The default name for this client.  Can be updated by other clients, but will revert to this default on restart of lucos_media_manager.
+* _HOSTDOMAIN_ The hostname this instance is running on - used for setting unique uuids and names to identify each client when multiple deployments of the app are running.

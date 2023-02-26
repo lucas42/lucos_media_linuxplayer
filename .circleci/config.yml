@@ -9,9 +9,6 @@ workflows:
           context: docker
       - lucos/deploy-xwing:
           context: docker
-          environment:
-            CLIENT_UUID: 02db18a0-b29d-4eb1-be6d-e7242de6496e
-            CLIENT_NAME: Living Room
           requires:
             - lucos/build-arm
           filters:
@@ -20,9 +17,6 @@ workflows:
                 - main
       - lucos/deploy-teltak:
           context: docker
-          environment:
-            CLIENT_UUID: bc828821-649a-46bd-9624-7ef668022549
-            CLIENT_NAME: Bedroom
           requires:
             - lucos/build-arm
           filters:
