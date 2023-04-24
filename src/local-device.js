@@ -10,11 +10,13 @@ const domainconfig = {
 	'teltak.s.l42.eu': {
 		'uuid': "bc828821-649a-46bd-9624-7ef668022549",
 		'name': "Bedroom",
+		'volumeExponent': 0.7,
 	},
 };
 const hostdomain = process.env.HOSTDOMAIN;
 if (!(hostdomain in domainconfig)) throw `Unknown HOSTDOMAIN "${hostdomain}"`;
 const uuid = domainconfig[hostdomain].uuid;
+const volumeExponent = domainconfig[hostdomain].volumeExponent || 0.2;
 let name = domainconfig[hostdomain].name;
 let current;
 
@@ -33,5 +35,8 @@ function isCurrent() {
 function setCurrent(newIsCurrent) {
 	current = newIsCurrent;
 }
+function getVolumeExponent() {
+	return volumeExponent;
+}
 
-module.exports = {getUuid, getName, setName, isCurrent, setCurrent};
+module.exports = {getUuid, getName, setName, isCurrent, setCurrent, getVolumeExponent};
