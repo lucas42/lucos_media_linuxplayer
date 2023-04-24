@@ -1,3 +1,4 @@
+const fetch = require('node-fetch');
 const localDevice = require("./local-device");
 let mediaManager = undefined;
 let getTimeElapsed = () => undefined;
