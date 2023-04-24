@@ -17,3 +17,9 @@ The user who runs the install script needs to be able to:
 
 * Play audio on the system
 * Using sudo, manage systemd configuration
+
+
+To view logs:
+```
+journalctl -u mediaplayer -f
+```
