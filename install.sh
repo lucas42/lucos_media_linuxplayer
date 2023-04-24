@@ -2,6 +2,7 @@
 
 set -e
 
+npm install
 servicefile="/etc/systemd/system/mediaplayer.service"
 tmpfile="/tmp/mediaplayer.service"
 cat > $tmpfile <<- EOM
