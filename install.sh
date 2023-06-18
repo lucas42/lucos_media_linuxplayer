@@ -2,6 +2,8 @@
 
 set -e
 
+apt-get update
+apt-get install nodejs npm mplayer -y
 npm install
 servicefile="/etc/systemd/system/mediaplayer.service"
 tmpfile="/tmp/mediaplayer.service"

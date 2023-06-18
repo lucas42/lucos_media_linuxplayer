@@ -1,7 +1,7 @@
-FROM node:18-bullseye
+FROM debian:bullseye
 
 RUN apt-get update
-RUN apt-get install mplayer -y
+RUN apt-get install nodejs npm mplayer -y
 WORKDIR /usr/src/app
 COPY package* ./
 RUN npm install
