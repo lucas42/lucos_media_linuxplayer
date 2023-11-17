@@ -7,7 +7,7 @@ const domainconfig = {
 		'uuid': "02db18a0-b29d-4eb1-be6d-e7242de6496e",
 		'name': "Living Room",
 	},
-	'teltak.s.l42.eu': {
+	'salvare.s.l42.eu': {
 		'uuid': "bc828821-649a-46bd-9624-7ef668022549",
 		'name': "Bedroom",
 		'volumeExponent': 0.7,
