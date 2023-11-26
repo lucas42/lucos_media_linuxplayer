@@ -25,39 +25,43 @@ function onStderr(errorMessage) {
 	console.error(errorMessage.toString());
 }
 
-function onData(rawData) {
-	const data = rawData.toString().trim();
-	if(data.startsWith('Playing ')) {
-		status.isPlaying = true;
-		status.url = data.match(/Playing\s(.{1,})\./)[1];
-		console.info(`Playing track ${status.url}`);
-	} else if(data.startsWith('A:')) {
-		const match = data.match(/A:\s*([\d\.]+)\s*/);
-		if (match) {
-			status.currentTime = match[1];
+function onData(buffer) {
+	const allData = buffer.toString();
+	// data may contain multiple lines at once, so split them and process line-by-line
+	allData.split("\n").forEach(singleLine => {
+		const data = singleLine.trim();
+		if(data.startsWith('Playing ')) {
+			status.isPlaying = true;
+			status.url = data.match(/Playing\s(.{1,})\./)[1];
+			console.info(`Playing track ${status.url}`);
+		} else if(data.startsWith('A:')) {
+			const match = data.match(/A:\s*([\d\.]+)\s*/);
+			if (match) {
+				status.currentTime = match[1];
+			} else {
+				console.warn(`Can't match time update: ${data}`);
+			}
+		} else if(data.startsWith('EOF code:')) {
+			console.debug(data);
+			status.isPlaying = false;
+			if (status.isChanging) {
+				// Don't apply to stops which were triggered by the server.
+				console.debug("Track ended, but taking no action as `isChanging` was set");
+			} else {
+				console.info(`Track Finished ${getCurrentTrack()}`);
+				manager.post("done", {track: getCurrentTrack()});
+			}
+		} else if(data.includes('Audio: ')) {
+			const audio = data.match(/Audio:\s(.+)/)[1];
+			if (audio === "no sound") {
+				console.error("mplayer can't output any sound.  Exiting...");
+				process.exit(2);
+			}
+			console.log(`Type of audio: ${audio}`);
 		} else {
-			console.warn(`Can't match time update: ${data}`);
+			console.debug(`>Unknown mplayer stdout: ${data}`);
 		}
-	} else if(data.startsWith('EOF code:')) {
-		console.debug(data);
-		status.isPlaying = false;
-		if (status.isChanging) {
-			// Don't apply to stops which were triggered by the server.
-			console.debug("Track ended, but taking no action as `isChanging` was set");
-		} else {
-			console.info(`Track Finished ${getCurrentTrack()}`);
-			manager.post("done", {track: getCurrentTrack()});
-		}
-	} else if(data.includes('Audio: ')) {
-		const audio = data.match(/Audio:\s(.+)/)[1];
-		if (audio === "no sound") {
-			console.error("mplayer can't output any sound.  Exiting...");
-			process.exit(2);
-		}
-		console.log(`Type of audio: ${audio}`);
-	} else {
-		console.debug(`>Unknown mplayer stdout: ${data}`);
-	}
+	});
 }
 
 // mplayer logs some errors when these aren't set.  (Not sure it make much functional difference, but nice for clearer logs)
