@@ -33,6 +33,7 @@ function processData(buffer, isError) {
 	// data may contain multiple lines at once, so split them and process line-by-line
 	allData.split("\n").forEach(singleLine => {
 		const data = singleLine.trim();
+		if (!data) return;
 		let match;
 		if(match = data.match(/^Playing\s(.{1,})\./)?.[1]) {
 			status.isPlaying = true;
