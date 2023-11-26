@@ -96,8 +96,6 @@ async function updateCurrentAudio(data) {
 	const now = data.tracks[0];
 	const shouldPlay = data.isPlaying && localDevice.isCurrent();
 	if (shouldPlay) {
-		await setVolume(data.volume);
-
 		if (status.url !== now.url) {
 			await changeTrack(now);
 		}
@@ -109,7 +107,7 @@ async function updateCurrentAudio(data) {
 			console.info(`Unpausing Track`);
 			await mplayer.stdin.write("pause\n");
 		}
-
+		await setVolume(data.volume);
 	} else {
 		await pauseTrack();
 	}
