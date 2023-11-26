@@ -23,3 +23,9 @@ To view logs:
 ```
 journalctl -u mediaplayer -f
 ```
+
+
+## Useful docs for interfacing with mplayer cli
+
+* https://linux.die.net/man/1/mplayer
+* http://www.mplayerhq.hu/DOCS/tech/slave.txt
