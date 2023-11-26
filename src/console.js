@@ -8,7 +8,7 @@ console_stamp( console, {
 				'error': 31, // Red
 				'warn': 33, // Yellow
 			}
-			const colourCode = colourMapping[args.method] || 0; // Default to white
+			const colourCode = colourMapping[args.method] ?? 0; // Default to white
 			return `\x1b[${colourCode}m`;
 		},
 		endColour:( args ) => {

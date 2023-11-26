@@ -22,7 +22,7 @@ function processTerminated(code, signal) {
 }
 
 function onStderr(errorMessage) {
-	console.error(errorMessage);
+	console.error(errorMessage.toString());
 }
 
 function onData(rawData) {
