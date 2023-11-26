@@ -40,7 +40,10 @@ function onData(rawData) {
 		}
 	} else if(data.startsWith('EOF code:')) {
 		status.isPlaying = false;
-		if (!status.isChanging) { // Don't apply to stops which were triggered by the server.
+		if (status.isChanging) {
+			// Don't apply to stops which were triggered by the server.
+			console.debug("Track ended, but taking no action as `isChanging` was set");
+		} else {
 			console.info(`Track Finished ${getCurrentTrack()}`);
 			manager.post("done", {track: getCurrentTrack()});
 		}
