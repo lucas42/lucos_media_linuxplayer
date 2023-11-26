@@ -10,7 +10,6 @@ const domainconfig = {
 	'salvare.s.l42.eu': {
 		'uuid': "bc828821-649a-46bd-9624-7ef668022549",
 		'name': "Bedroom",
-		'volumeExponent': 0.7,
 	},
 };
 const hostdomain = process.env.HOSTDOMAIN;
