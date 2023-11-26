@@ -39,6 +39,7 @@ function onData(rawData) {
 			console.warn(`Can't match time update: ${data}`);
 		}
 	} else if(data.startsWith('EOF code:')) {
+		console.debug(data);
 		status.isPlaying = false;
 		if (status.isChanging) {
 			// Don't apply to stops which were triggered by the server.
