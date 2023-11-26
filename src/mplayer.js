@@ -21,11 +21,14 @@ function processTerminated(code, signal) {
 	process.exit(1);
 }
 
-function onStderr(errorMessage) {
-	console.warn(errorMessage.toString());
+function onStdout(buffer) {
+	processData(buffer, false);
+}
+function onStderr(buffer) {
+	processData(buffer, true);
 }
 
-function onData(buffer) {
+function processData(buffer, isError) {
 	const allData = buffer.toString();
 	// data may contain multiple lines at once, so split them and process line-by-line
 	allData.split("\n").forEach(singleLine => {
@@ -47,12 +50,9 @@ function onData(buffer) {
 			if (status.isChanging) {
 				// Don't apply to stops which were triggered by the server.
 				console.debug("Taking no action as `isChanging` was set");
-			} else if (match == "1") {
-				console.info(`Track Finished ${getCurrentTrack()}`);
-				manager.post("done", {track: getCurrentTrack()});
 			} else {
-				console.warn(`Track Errored ${getCurrentTrack()} with status ${match}`);
-				manager.post("error", {track: getCurrentTrack(), message: `End of File code ${match}`});
+				console.info(`Track Finished ${getCurrentTrack()} with status ${match}`);
+				manager.post("done", {track: getCurrentTrack()});
 			}
 		} else if(match = data.match(/^Audio:\s(.+)/)?.[1]) {
 			if (match === "no sound") {
@@ -60,8 +60,15 @@ function onData(buffer) {
 				process.exit(2);
 			}
 			console.log(`Type of audio: ${match}`);
+		} else if(isError && data.startsWith("No stream found")) {
+			console.warn(`Track errored with "${data}" ${getCurrentTrack()}`);
+			manager.post("error", {track: getCurrentTrack(), message: data});
+		} else if(isError && (match = data.match(/^\[.*\](HTTP error.+)$/)?.[1])) {
+			console.warn(`Track errored with "${match}" ${getCurrentTrack()}`);
+			manager.post("error", {track: getCurrentTrack(), message: match});
 		} else {
-			console.debug(`>Unknown mplayer stdout: ${data}`);
+			if (isError) console.warn(data);
+			else console.debug(data);
 		}
 	});
 }
@@ -79,7 +86,7 @@ const mplayerArgs = [
 
 const mplayer = spawn('mplayer', mplayerArgs, { env: mplayerEnv });
 
-mplayer.stdout.on('data', onData);
+mplayer.stdout.on('data', onStdout);
 mplayer.stderr.on('data', onStderr);
 mplayer.on('exit', processTerminated);
 

@@ -18,5 +18,5 @@ console_stamp( console, {
 	extend: {
 		debug: 5, // By default console-stamp sets debug and log to be the same level.  This moves debug down a step.
 	},
-	level: 'debug',
+	level: 'log',
 } );
