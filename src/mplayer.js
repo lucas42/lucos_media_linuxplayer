@@ -33,9 +33,13 @@ function onData(rawData) {
 		status.url = data.match(/Playing\s(.{1,})\./)[1];
 		console.info(`Playing track ${status.url}`);
 	} else if(data.startsWith('A:')) {
-		console.log(`Time update: ${data}`);
-		console.log(`//TODO: update time elapsed`);
-		//status.currentTime = newTimeElapsed;
+		const match = data.match(/A:\s*([\d\.]+)\s*/);
+		if (match) {
+			status.currentTime = match[1];
+			console.debug(`Current Time: ${status.currentTime}`);
+		} else {
+			console.warn(`Can't match time update: ${data}`);
+		}
 	} else if(data.startsWith('EOF code:')) {
 		status.isPlaying = false;
 		if (!status.isChanging) { // Don't apply to stops which were triggered by the server.
