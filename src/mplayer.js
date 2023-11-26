@@ -21,17 +21,17 @@ function processTerminated(code, signal) {
 	process.exit(1);
 }
 
-function onStderr(stderr) {
-	console.error(`\x1b[31m${stderr}\x1b[0m`); // Output the message to stderr, in red
+function onStderr(errorMessage) {
+	console.error(errorMessage);
 }
 
 function onData(rawData) {
 	const data = rawData.toString().trim();
-	//console.log(`>stdout: ${data}`, JSON.stringify(data));
+	console.debug(`>mplayer stdout: ${data}`, JSON.stringify(data));
 	if(data.startsWith('Playing ')) {
 		status.isPlaying = true;
 		status.url = data.match(/Playing\s(.{1,})\./)[1];
-		console.log(`Playing track ${status.url}`);
+		console.info(`Playing track ${status.url}`);
 	} else if(data.startsWith('A:')) {
 		console.log(`Time update: ${data}`);
 		console.log(`//TODO: update time elapsed`);
@@ -39,7 +39,7 @@ function onData(rawData) {
 	} else if(data.startsWith('EOF code:')) {
 		status.isPlaying = false;
 		if (!status.isChanging) { // Don't apply to stops which were triggered by the server.
-			console.log(`Track Finished ${getCurrentTrack()}`);
+			console.info(`Track Finished ${getCurrentTrack()}`);
 			manager.post("done", {track: getCurrentTrack()});
 		}
 	} else if(data.includes('Audio: ')) {
@@ -50,7 +50,7 @@ function onData(rawData) {
 		}
 		console.log(`Type of audio: ${audio}`);
 	} else {
-		console.error("Unknown data ", data);
+		console.warn("Unknown data ", data);
 	}
 }
 
@@ -86,7 +86,7 @@ async function updateCurrentAudio(data) {
 		}
 		if (!status.isPlaying) {
 			status.isPlaying = true;
-			console.log(`Unpausing Track`);
+			console.info(`Unpausing Track`);
 			await mplayer.stdin.write("pause\n");
 		}
 
@@ -96,7 +96,7 @@ async function updateCurrentAudio(data) {
 }
 async function changeTrack(track) {
 	status.isChanging = true;
-	console.log(`Play track ${track.url} from ${track.currentTime} seconds`);
+	console.info(`Play track ${track.url} from ${track.currentTime} seconds`);
 	await mplayer.stdin.write('stop\n');
 	await mplayer.stdin.write(`loadfile "${track.url}" \n`);
 	status.isPlaying = true;
@@ -110,7 +110,7 @@ async function pauseTrack() {
 	if (!status.isPlaying) return;
 	status.isPlaying = false;
 	status.isChanging = true;
-	console.log(`Pausing Track`);
+	console.info(`Pausing Track`);
 	await mplayer.stdin.write("pause\n");
 
 	// Send the server an update to let it know how far the track progressed
@@ -126,7 +126,7 @@ async function setVolume(volume) {
 	if (status.volume === normalisedVol) return;
 	await mplayer.stdin.write(`volume ${normalisedVol} 1\n`); // Final argument here sets volume to absolute number, rather than relative
 	status.volume = normalisedVol;
-	console.log(`Volume at ${normalisedVol}%`);
+	console.info(`Volume at ${normalisedVol}%`);
 }
 
 pubsub.listenExisting("managerData", updateCurrentAudio, true);
