@@ -66,7 +66,7 @@ const mplayerEnv = {
 	HOME: process.env.HOME,
 };
 const mplayerArgs = [
-	'-msglevel', 'global=5', '-msglevel', 'cplayer=4', // Set the verbosity of mplayer logging
+	'-msglevel', 'global=6', '-msglevel', 'cplayer=4', // Set the verbosity of mplayer logging
 	'-slave', '-idle', // Tell mplayer to read commands from stdin, rather than keyboard events.  Also, don't quit while waiting for new commands
 	'-nolirc', // Disable infrared remote control support to avoid warnings in logs
 ]
