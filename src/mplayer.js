@@ -27,7 +27,6 @@ function onStderr(errorMessage) {
 
 function onData(rawData) {
 	const data = rawData.toString().trim();
-	console.debug(`>mplayer stdout: ${data}`, JSON.stringify(data));
 	if(data.startsWith('Playing ')) {
 		status.isPlaying = true;
 		status.url = data.match(/Playing\s(.{1,})\./)[1];
@@ -36,7 +35,6 @@ function onData(rawData) {
 		const match = data.match(/A:\s*([\d\.]+)\s*/);
 		if (match) {
 			status.currentTime = match[1];
-			console.debug(`Current Time: ${status.currentTime}`);
 		} else {
 			console.warn(`Can't match time update: ${data}`);
 		}
@@ -54,7 +52,7 @@ function onData(rawData) {
 		}
 		console.log(`Type of audio: ${audio}`);
 	} else {
-		console.warn("Unknown data ", data);
+		console.debug(`>Unknown mplayer stdout: ${data}`);
 	}
 }
 
