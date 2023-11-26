@@ -1,6 +1,6 @@
 {
   "name": "lucos_media_linuxplayer",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A browserless player for the lucos_media ecosystem",
   "main": "src/index.js",
   "scripts": {
