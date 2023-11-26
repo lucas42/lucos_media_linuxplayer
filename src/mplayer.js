@@ -30,34 +30,36 @@ function onData(buffer) {
 	// data may contain multiple lines at once, so split them and process line-by-line
 	allData.split("\n").forEach(singleLine => {
 		const data = singleLine.trim();
-		if(data.startsWith('Playing ')) {
+		let match;
+		if(match = data.match(/^Playing\s(.{1,})\./)?.[1]) {
 			status.isPlaying = true;
-			status.url = data.match(/Playing\s(.{1,})\./)[1];
+			status.url = match;
 			console.info(`Playing track ${status.url}`);
-		} else if(data.startsWith('A:')) {
-			const match = data.match(/A:\s*([\d\.]+)\s*/);
+		} else if(match = data.match(/^A:\s*([\d\.]+)\s*/)?.[1]) {
 			if (match) {
-				status.currentTime = match[1];
+				status.currentTime = match;
 			} else {
 				console.warn(`Can't match time update: ${data}`);
 			}
-		} else if(data.startsWith('EOF code:')) {
-			console.debug(data);
+		} else if(match = data.match(/^EOF code:\s*(\d+)/)?.[1]) {
+			console.debug(`Track ended with code ${match}`);
 			status.isPlaying = false;
 			if (status.isChanging) {
 				// Don't apply to stops which were triggered by the server.
-				console.debug("Track ended, but taking no action as `isChanging` was set");
-			} else {
+				console.debug("Taking no action as `isChanging` was set");
+			} else if (match == "1") {
 				console.info(`Track Finished ${getCurrentTrack()}`);
 				manager.post("done", {track: getCurrentTrack()});
+			} else {
+				console.warn(`Track Errored ${getCurrentTrack()} with status ${match}`);
+				manager.post("error", {track: getCurrentTrack(), message: `End of File code ${match}`});
 			}
-		} else if(data.includes('Audio: ')) {
-			const audio = data.match(/Audio:\s(.+)/)[1];
-			if (audio === "no sound") {
+		} else if(match = data.match(/^Audio:\s(.+)/)?.[1]) {
+			if (match === "no sound") {
 				console.error("mplayer can't output any sound.  Exiting...");
 				process.exit(2);
 			}
-			console.log(`Type of audio: ${audio}`);
+			console.log(`Type of audio: ${match}`);
 		} else {
 			console.debug(`>Unknown mplayer stdout: ${data}`);
 		}
