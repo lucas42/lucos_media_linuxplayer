@@ -1,7 +1,7 @@
-FROM debian:bookworm
+FROM node:21-bookworm
 
 RUN apt-get update
-RUN apt-get install nodejs npm mplayer -y
+RUN apt-get install mplayer -y
 WORKDIR /usr/src/app
 COPY package* ./
 RUN npm install
