@@ -5,20 +5,16 @@ workflows:
   version: 2
   build-deploy:
     jobs:
-      - lucos/build-arm64:
-          context: docker
+      - lucos/build-arm64
       - lucos/deploy-salvare:
-          context: docker
           requires:
             - lucos/build-arm64
           filters:
             branches:
               only:
                 - main
-      - lucos/build-armv7l:
-          context: docker
+      - lucos/build-armv7l
       - lucos/deploy-xwing:
-          context: docker
           requires:
             - lucos/build-armv7l
           filters:
