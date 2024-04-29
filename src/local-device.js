@@ -3,11 +3,11 @@ const domainconfig = {
 		'uuid': "d56053b3-affd-4645-8b64-ca715f2aeea4",
 		'name': "Local dev linux player",
 	},
-	'xwing.s.l42.eu': {
+	'xwing-v4.s.l42.eu': {
 		'uuid': "02db18a0-b29d-4eb1-be6d-e7242de6496e",
 		'name': "Living Room",
 	},
-	'salvare.s.l42.eu': {
+	'salvare-v4.s.l42.eu': {
 		'uuid': "bc828821-649a-46bd-9624-7ef668022549",
 		'name': "Bedroom",
 	},
