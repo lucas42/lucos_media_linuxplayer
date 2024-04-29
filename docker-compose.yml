@@ -10,3 +10,4 @@ services:
     devices:
       - /dev/snd
     restart: always
+    network_mode: host
