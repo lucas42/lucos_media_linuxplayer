@@ -1,6 +1,6 @@
 import { listenExisting } from 'lucos_pubsub';
 import { post, setUpdateFunctions } from './manager.js';
-import { isCurrent, getVolumeExponent } from './local-device.js';
+import localDevice from './local-device.js';
 import { spawn } from 'child_process';
 
 
@@ -94,7 +94,7 @@ mplayer.on('exit', processTerminated);
 
 async function updateCurrentAudio(data) {
 	const now = data.tracks[0];
-	const shouldPlay = data.isPlaying && isCurrent();
+	const shouldPlay = data.isPlaying && localDevice.isCurrent();
 	if (shouldPlay) {
 		if (status.url !== now.url) {
 			await changeTrack(now);
@@ -140,7 +140,7 @@ async function setVolume(volume) {
 	// mplayer's volume doesn't sound linear, so do some maths to try to get it feeling more normal.
 	// The exponent varies by device, so rely on per device config
 	// (Also it's volume is expressed as a percentage)
-	const normalisedVol = Math.pow(volume, getVolumeExponent()) * 100;
+	const normalisedVol = Math.pow(volume, localDevice.getVolumeExponent()) * 100;
 	if (status.volume === normalisedVol) return;
 	await mplayer.stdin.write(`volume ${normalisedVol} 1\n`); // Final argument here sets volume to absolute number, rather than relative
 	status.volume = normalisedVol;

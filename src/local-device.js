@@ -37,3 +37,5 @@ export function setCurrent(newIsCurrent) {
 export function getVolumeExponent() {
 	return volumeExponent;
 }
+
+export default {getUuid, getName, setName, isCurrent, setCurrent, getVolumeExponent};

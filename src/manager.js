@@ -1,11 +1,34 @@
-import { getUuid } from './local-device.js';
 let mediaManager = undefined;
 let getTimeElapsed = () => undefined;
 let getCurrentTrack = () => undefined;
 
+const controller = new AbortController();
+const signal = controller.signal;
+
 export function init(mediaManagerValue) {
 	mediaManager = mediaManagerValue;
 }
+export function get(endpoint) {
+	if (!mediaManager) throw "making request before manager module initiated";
+	const url = mediaManager+endpoint;
+	return fetch(url, {method: 'GET', signal});
+}
+export function put(endpoint, body) {
+	if (!mediaManager) throw "making request before manager module initiated";
+	const url = mediaManager+endpoint;
+	return fetch(url, {method: 'PUT', body, signal});
+}
+export function del(endpoint, body) { // Not called 'delete', because that's a reserved word in javascript
+	if (!mediaManager) throw "making request before manager module initiated";
+	const url = mediaManager+endpoint;
+	return fetch(url, {method: 'DELETE', body, signal});
+}
+
+export function abortAllRequests(reason) {
+	controller.abort(reason);
+}
+
+//**** All functions below are deprecated
 
 /**
  * The functions for checking the current status of play varies by player
@@ -15,6 +38,8 @@ export function setUpdateFunctions(timeElapsed, currentTrack) {
 	getTimeElapsed = timeElapsed;
 	getCurrentTrack = currentTrack;
 }
+
+import { getUuid } from './local-device.js';
 
 /**
  * Returns some standard GET parameters to include in all requests
