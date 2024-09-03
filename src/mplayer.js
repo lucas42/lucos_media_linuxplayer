@@ -142,9 +142,8 @@ async function pauseTrack() {
 async function setVolume(volume) {
 
 	// mplayer's volume doesn't sound linear, so do some maths to try to get it feeling more normal.
-	// The exponent varies by device, so rely on per device config
-	// (Also it's volume is expressed as a percentage)
-	const normalisedVol = Math.pow(volume, localDevice.getVolumeExponent()) * 100;
+	// (Also its volume is expressed as a percentage)
+	const normalisedVol = Math.pow(volume, 0.2) * 100;
 	if (status.volume === normalisedVol) return;
 	await mplayer.stdin.write(`volume ${normalisedVol} 1\n`); // Final argument here sets volume to absolute number, rather than relative
 	status.volume = normalisedVol;

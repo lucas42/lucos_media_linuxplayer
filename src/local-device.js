@@ -15,7 +15,6 @@ const domainconfig = {
 const hostdomain = process.env.HOSTDOMAIN;
 if (!(hostdomain in domainconfig)) throw `Unknown HOSTDOMAIN "${hostdomain}"`;
 const uuid = domainconfig[hostdomain].uuid;
-const volumeExponent = domainconfig[hostdomain].volumeExponent || 0.2;
 let name = domainconfig[hostdomain].name;
 let current;
 
@@ -34,8 +33,5 @@ export function isCurrent() {
 export function setCurrent(newIsCurrent) {
 	current = newIsCurrent;
 }
-export function getVolumeExponent() {
-	return volumeExponent;
-}
 
-export default {getUuid, getName, setName, isCurrent, setCurrent, getVolumeExponent};
+export default {getUuid, getName, setName, isCurrent, setCurrent};
