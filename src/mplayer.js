@@ -1,5 +1,5 @@
 import { listenExisting } from 'lucos_pubsub';
-import { post, setUpdateFunctions } from './manager.js';
+import { put, del } from './manager.js';
 import localDevice from './local-device.js';
 import { spawn } from 'child_process';
 
@@ -52,8 +52,9 @@ function processData(buffer, isError) {
 				// Don't apply to stops which were triggered by the server.
 				console.debug("Taking no action as `isChanging` was set");
 			} else {
-				console.info(`Track Finished ${getCurrentTrack()} with status ${match}`);
-				post("done", {track: getCurrentTrack()});
+				console.info(`Track Finished ${status.url} with status ${match}.  [uuid: ${status.uuid}]`);
+				const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
+				del(`v3/playlist/${playlist}/${status.uuid}?action=complete`);
 			}
 		} else if(match = data.match(/^Audio:\s(.+)/)?.[1]) {
 			if (match === "no sound") {
@@ -63,10 +64,12 @@ function processData(buffer, isError) {
 			console.log(`Type of audio: ${match}`);
 		} else if(isError && data.startsWith("No stream found")) {
 			console.warn(`Track errored with "${data}" ${getCurrentTrack()}`);
-			post("error", {track: getCurrentTrack(), message: data});
+			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
+			del(`v3/playlist/${playlist}/${status.uuid}?action=error`, data);
 		} else if(isError && (match = data.match(/^\[.*\](HTTP error.+)$/)?.[1])) {
 			console.warn(`Track errored with "${match}" ${getCurrentTrack()}`);
-			post("error", {track: getCurrentTrack(), message: match});
+			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
+			del(`v3/playlist/${playlist}/${status.uuid}?action=error`, match);
 		} else {
 			if (isError) console.warn(data);
 			else console.debug(data);
@@ -118,6 +121,7 @@ async function changeTrack(track) {
 	await mplayer.stdin.write('stop\n');
 	await mplayer.stdin.write(`loadfile "${track.url}" \n`);
 	status.isPlaying = true;
+	status.uuid = track.uuid;
 	if (track.currentTime > 0) {
 		await mplayer.stdin.write(`seek ${track.currentTime} 2\n`); // According to docs; "2 is a seek to an absolute position of <value> seconds."
 	}
@@ -132,7 +136,7 @@ async function pauseTrack() {
 	await mplayer.stdin.write("pause\n");
 
 	// Send the server an update to let it know how far the track progressed
-	await post("update");
+	await updateTrackStatus();
 	status.isChanging = false;
 }
 async function setVolume(volume) {
@@ -147,27 +151,13 @@ async function setVolume(volume) {
 	console.info(`Volume at ${normalisedVol}%`);
 }
 
+
+async function updateTrackStatus() {
+	const timeElapsed = getTimeElapsed();
+	if (!status.uuid) return;
+
+	const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
+	await put(`v3/playlist/${playlist}/${status.uuid}/current-time`, status.currentTime);
+}
+
 listenExisting("managerData", updateCurrentAudio, true);
-/**
- * Returns the number of seconds into the current track
- * Based on last update from mplayer.
- */
-function getTimeElapsed() {
-	return status.currentTime;
-}
-
-/**
- * Returns the URL of the currently playing track
- */
-function getCurrentTrack() {
-	return status.url;
-}
-
-/**
- * Returns true if the player is current playing media
- */
-function isPlaying() {
-	return status.isPlaying;
-}
-
-setUpdateFunctions(getTimeElapsed, getCurrentTrack);

@@ -30,15 +30,6 @@ export function abortAllRequests(reason) {
 
 //**** All functions below are deprecated
 
-/**
- * The functions for checking the current status of play varies by player
- * Therefore, let each player set these when they're ready
- **/
-export function setUpdateFunctions(timeElapsed, currentTrack) {
-	getTimeElapsed = timeElapsed;
-	getCurrentTrack = currentTrack;
-}
-
 import { getUuid } from './local-device.js';
 
 /**
@@ -68,14 +59,6 @@ function _makeRequestToManager(endpoint, method, parameters={}) {
 	let url = mediaManager+endpoint;
 	if (searchParams.toString()) url += "?" + searchParams.toString();
 	return fetch(url, {method})
-}
-
-export async function post(endpoint, parameters={}) {
-	try {
-		await _makeRequestToManager(endpoint, 'post', parameters);
-	} catch (error) {
-		console.error("Error posting to manager", endpoint, parameters, error);
-	}
 }
 
 export async function getJson(endpoint, parameters={}) {
