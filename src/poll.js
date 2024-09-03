@@ -1,5 +1,5 @@
-const pubsub = require("./pubsub");
-const manager = require("./manager");
+import { send } from 'lucos_pubsub';
+import { getJson } from './manager.js';
 let suppressErrors = false;
 
 // Don't show any errors whilst the page unloads as it gets confusing in the console whether it's the old page or new page
@@ -10,12 +10,12 @@ if (typeof window === "object") window.addEventListener("unload", event => {
 
 async function poll(hashcode) {
 	try {
-		data = await manager.getJson("poll/summary", { hashcode, "_cb": new Date().getTime() });
+		const data = await getJson("poll/summary", { hashcode, "_cb": new Date().getTime() });
 
 		// If there's a hashcode, use the new one and evaluate new data.
 		if (data.hashcode) {
 			hashcode = data.hashcode;
-			pubsub.send("managerData", data);
+			send("managerData", data);
 		}
 		poll(hashcode);
 	} catch(error){

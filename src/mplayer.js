@@ -1,7 +1,7 @@
-const pubsub = require("./pubsub");
-const manager = require("./manager");
-const localDevice = require("./local-device");
-const spawn = require('child_process').spawn;
+import { listenExisting } from 'lucos_pubsub';
+import { post, setUpdateFunctions } from './manager.js';
+import { isCurrent, getVolumeExponent } from './local-device.js';
+import { spawn } from 'child_process';
 
 
 const status = {
@@ -53,7 +53,7 @@ function processData(buffer, isError) {
 				console.debug("Taking no action as `isChanging` was set");
 			} else {
 				console.info(`Track Finished ${getCurrentTrack()} with status ${match}`);
-				manager.post("done", {track: getCurrentTrack()});
+				post("done", {track: getCurrentTrack()});
 			}
 		} else if(match = data.match(/^Audio:\s(.+)/)?.[1]) {
 			if (match === "no sound") {
@@ -63,10 +63,10 @@ function processData(buffer, isError) {
 			console.log(`Type of audio: ${match}`);
 		} else if(isError && data.startsWith("No stream found")) {
 			console.warn(`Track errored with "${data}" ${getCurrentTrack()}`);
-			manager.post("error", {track: getCurrentTrack(), message: data});
+			post("error", {track: getCurrentTrack(), message: data});
 		} else if(isError && (match = data.match(/^\[.*\](HTTP error.+)$/)?.[1])) {
 			console.warn(`Track errored with "${match}" ${getCurrentTrack()}`);
-			manager.post("error", {track: getCurrentTrack(), message: match});
+			post("error", {track: getCurrentTrack(), message: match});
 		} else {
 			if (isError) console.warn(data);
 			else console.debug(data);
@@ -94,7 +94,7 @@ mplayer.on('exit', processTerminated);
 
 async function updateCurrentAudio(data) {
 	const now = data.tracks[0];
-	const shouldPlay = data.isPlaying && localDevice.isCurrent();
+	const shouldPlay = data.isPlaying && isCurrent();
 	if (shouldPlay) {
 		if (status.url !== now.url) {
 			await changeTrack(now);
@@ -132,7 +132,7 @@ async function pauseTrack() {
 	await mplayer.stdin.write("pause\n");
 
 	// Send the server an update to let it know how far the track progressed
-	await manager.post("update");
+	await post("update");
 	status.isChanging = false;
 }
 async function setVolume(volume) {
@@ -140,14 +140,14 @@ async function setVolume(volume) {
 	// mplayer's volume doesn't sound linear, so do some maths to try to get it feeling more normal.
 	// The exponent varies by device, so rely on per device config
 	// (Also it's volume is expressed as a percentage)
-	const normalisedVol = Math.pow(volume, localDevice.getVolumeExponent()) * 100;
+	const normalisedVol = Math.pow(volume, getVolumeExponent()) * 100;
 	if (status.volume === normalisedVol) return;
 	await mplayer.stdin.write(`volume ${normalisedVol} 1\n`); // Final argument here sets volume to absolute number, rather than relative
 	status.volume = normalisedVol;
 	console.info(`Volume at ${normalisedVol}%`);
 }
 
-pubsub.listenExisting("managerData", updateCurrentAudio, true);
+listenExisting("managerData", updateCurrentAudio, true);
 /**
  * Returns the number of seconds into the current track
  * Based on last update from mplayer.
@@ -170,4 +170,4 @@ function isPlaying() {
 	return status.isPlaying;
 }
 
-manager.setUpdateFunctions(getTimeElapsed, getCurrentTrack);
+setUpdateFunctions(getTimeElapsed, getCurrentTrack);

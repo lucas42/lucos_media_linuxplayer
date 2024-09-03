@@ -1,4 +1,4 @@
-const console_stamp = require( 'console-stamp' );
+import console_stamp from 'console-stamp';
 
 console_stamp( console, {
 	format: ':startColour :date(yyyy-mm-dd HH:MM:ss.l) :label :msg :endColour',

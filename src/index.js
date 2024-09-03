@@ -1,6 +1,5 @@
-const mediaManager = process.env.MEDIA_MANAGER || "https://ceol.l42.eu/";
-require("./console") // Ensure all logs are formatted nicely
-require("./manager").init(mediaManager);  // Initiate the manager early so other modules can use it immediately
-require("./poll");
-require("./local-device-updates");
-require("./mplayer");
+import './console.js'; // Ensure all logs are formatted nicely
+import './init-manager.js'; // Initiate the manager early so other modules can use it immediately
+import './poll.js';
+import './local-device-updates.js';
+import './mplayer.js';

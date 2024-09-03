@@ -1,9 +1,9 @@
-const localDevice = require("./local-device");
+import { getUuid } from './local-device.js';
 let mediaManager = undefined;
 let getTimeElapsed = () => undefined;
 let getCurrentTrack = () => undefined;
 
-function init(mediaManagerValue) {
+export function init(mediaManagerValue) {
 	mediaManager = mediaManagerValue;
 }
 
@@ -11,7 +11,7 @@ function init(mediaManagerValue) {
  * The functions for checking the current status of play varies by player
  * Therefore, let each player set these when they're ready
  **/
-function setUpdateFunctions(timeElapsed, currentTrack) {
+export function setUpdateFunctions(timeElapsed, currentTrack) {
 	getTimeElapsed = timeElapsed;
 	getCurrentTrack = currentTrack;
 }
@@ -22,7 +22,7 @@ function setUpdateFunctions(timeElapsed, currentTrack) {
  */
 function _getUpdateParams() {
 	const params = new URLSearchParams();
-	if (localDevice.getUuid() !== undefined) params.set("device", localDevice.getUuid());
+	if (getUuid() !== undefined) params.set("device", getUuid());
 
 	const timeElapsed = getTimeElapsed();
 	const currentTrack = getCurrentTrack();
@@ -45,7 +45,7 @@ function _makeRequestToManager(endpoint, method, parameters={}) {
 	return fetch(url, {method})
 }
 
-async function post(endpoint, parameters={}) {
+export async function post(endpoint, parameters={}) {
 	try {
 		await _makeRequestToManager(endpoint, 'post', parameters);
 	} catch (error) {
@@ -53,9 +53,7 @@ async function post(endpoint, parameters={}) {
 	}
 }
 
-async function getJson(endpoint, parameters={}) {
+export async function getJson(endpoint, parameters={}) {
 	const response = await _makeRequestToManager(endpoint, 'get', parameters);
 	return response.json();
 }
-
-module.exports = {init, getJson, post, setUpdateFunctions};

@@ -19,23 +19,21 @@ const volumeExponent = domainconfig[hostdomain].volumeExponent || 0.2;
 let name = domainconfig[hostdomain].name;
 let current;
 
-function getUuid() {
+export function getUuid() {
 	return uuid;
 }
-function getName() {
+export function getName() {
 	return name;
 }
-function setName(newName) {
+export function setName(newName) {
 	name = newName;
 }
-function isCurrent() {
+export function isCurrent() {
 	return current;
 }
-function setCurrent(newIsCurrent) {
+export function setCurrent(newIsCurrent) {
 	current = newIsCurrent;
 }
-function getVolumeExponent() {
+export function getVolumeExponent() {
 	return volumeExponent;
 }
-
-module.exports = {getUuid, getName, setName, isCurrent, setCurrent, getVolumeExponent};
