@@ -153,9 +153,7 @@ async function setVolume(volume) {
 
 
 async function updateTrackStatus() {
-	const timeElapsed = getTimeElapsed();
 	if (!status.uuid) return;
-
 	const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
 	await put(`v3/playlist/${playlist}/${status.uuid}/current-time`, status.currentTime);
 }
