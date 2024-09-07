@@ -9,7 +9,6 @@ const status = {
 	currentTime: 0, // How far the current track has progressed
 	isPlaying: false, // Whether mplayer is current playing a track
 	volume: null, // Value between 0 and 100 represent the volume used by mplayer (which has a non-linear relationship to the volume sent by lucos media manager)
-	isChanging: false, // Whether there's a track change in progress
 };
 
 function processTerminated(code, signal) {
@@ -116,7 +115,6 @@ async function updateCurrentAudio(data) {
 	}
 }
 async function changeTrack(track) {
-	status.isChanging = true;
 	console.info(`Play track ${track.url} from ${track.currentTime} seconds`);
 	await mplayer.stdin.write('stop\n');
 	await mplayer.stdin.write(`loadfile "${track.url}" \n`);
@@ -125,19 +123,15 @@ async function changeTrack(track) {
 	if (track.currentTime > 0) {
 		await mplayer.stdin.write(`seek ${track.currentTime} 2\n`); // According to docs; "2 is a seek to an absolute position of <value> seconds."
 	}
-
-	status.isChanging = false;
 }
 async function pauseTrack() {
 	if (!status.isPlaying) return;
 	status.isPlaying = false;
-	status.isChanging = true;
 	console.info(`Pausing Track`);
 	await mplayer.stdin.write("pause\n");
 
 	// Send the server an update to let it know how far the track progressed
 	await updateTrackStatus();
-	status.isChanging = false;
 }
 async function setVolume(volume) {
 
