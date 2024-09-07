@@ -48,9 +48,9 @@ function processData(buffer, isError) {
 		} else if(match = data.match(/^EOF code:\s*(\d+)/)?.[1]) {
 			console.debug(`Track ended with code ${match}`);
 			status.isPlaying = false;
-			if (status.isChanging) {
-				// Don't apply to stops which were triggered by the server.
-				console.debug("Taking no action as `isChanging` was set");
+			if (match == "4") {
+				// Don't take action in response to a procative stop command
+				console.debug("Taking no action as track was proactively stopped");
 			} else {
 				console.info(`Track Finished ${status.url} with status ${match}.  [uuid: ${status.uuid}]`);
 				const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
