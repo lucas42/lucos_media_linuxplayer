@@ -12,7 +12,8 @@ A browserless player for the lucos_media ecosystem
 
 ## Environment variables
 
-* _MEDIA_MANAGER_ The origin to use for calls to lucos_media_manager.  Defaults to the production instance.
+* _MEDIA_MANAGER_URL_ The origin to use for calls to lucos_media_manager.  Defaults to the production instance.
+* _KEY_LUCOS_MEDIA_MANAGER_ The API key to use for calls to lucos_media_manager.
 * _HOSTDOMAIN_ The hostname this instance is running on - used for setting unique uuids and names to identify each client when multiple deployments of the app are running.
 
 ## Running
