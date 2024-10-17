@@ -1,4 +1,4 @@
-FROM node:22-bookworm
+FROM node:23-bookworm
 
 RUN apt-get update
 RUN apt-get install mplayer -y
