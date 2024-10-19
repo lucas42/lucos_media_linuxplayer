@@ -34,6 +34,10 @@ const domainconfig = {
 		'uuid': "bc828821-649a-46bd-9624-7ef668022549",
 		'name': "Bedroom",
 	},
+	'virgon-express-v4.s.l42.eu': {
+		'uuid': "48cd9db9-fb58-42b0-ace9-785fce2ec0d5",
+		'name': "Bathroom",
+	},
 };
 const hostdomain = process.env.HOSTDOMAIN;
 if (!(hostdomain in domainconfig)) throw `Unknown HOSTDOMAIN "${hostdomain}"`;

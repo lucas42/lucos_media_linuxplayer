@@ -21,3 +21,11 @@ workflows:
             branches:
               only:
                 - main
+      - lucos/build-arm64
+      - lucos/deploy-virgon-express:
+          requires:
+            - lucos/build-arm64
+          filters:
+            branches:
+              only:
+                - main
