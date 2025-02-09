@@ -98,7 +98,7 @@ async function updateCurrentAudio(data) {
 	const now = data.tracks[0];
 	const shouldPlay = data.isPlaying && localDevice.isCurrent();
 	if (shouldPlay) {
-		if (status.url !== now.url) {
+		if (status.uuid !== now.uuid) {
 			await changeTrack(now);
 		}
 		if (status.currentTime < now.currentTime) {
