@@ -13,11 +13,11 @@ workflows:
             branches:
               only:
                 - main
-      - lucos/build-armv7l
-      - lucos/deploy-xwing:
-          requires:
-            - lucos/build-armv7l
-          filters:
-            branches:
-              only:
-                - main
+#      - lucos/build-armv7l
+#      - lucos/deploy-xwing:
+#          requires:
+#            - lucos/build-armv7l
+#          filters:
+#            branches:
+#              only:
+#                - main
