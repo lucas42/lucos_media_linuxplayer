@@ -1,12 +1,16 @@
 let mediaManager;
-let apiKey;
+let headers;
 
 const controller = new AbortController();
 const signal = controller.signal;
 
-export function init(mediaManagerValue, apiKeyValue) {
+export function init(mediaManagerValue, apiKey, userAgent) {
 	mediaManager = mediaManagerValue;
-	apiKey = apiKeyValue;
+	headers = new Headers();
+	headers.set("Authorization", `Key ${apiKey}`);
+	if (userAgent) {
+		headers.set("User-Agent", userAgent);
+	}
 }
 export function get(endpoint) {
 	return fetchFromManager(endpoint, 'GET', null);
@@ -21,17 +25,17 @@ export function post(endpoint, body) {
 	return fetchFromManager(endpoint, 'POST', body);
 }
 
-function fetchFromManager(endpoint, method, body) {
+async function fetchFromManager(endpoint, method, body) {
 	if (!mediaManager) throw "making request before manager module initiated";
 	const url = mediaManager+endpoint;
-	return fetch(url, {
+	const response = await fetch(url, {
 		method,
-		headers: {
-			Authorization: `Key ${apiKey}`,
-		},
+		headers,
 		body,
 		signal,
 	});
+	if (!response.ok) throw new Error(`Unexpected response code ${response.status}.  ${await response.text()}`);
+	return response
 }
 
 export function abortAllRequests(reason) {
