@@ -6,7 +6,9 @@ services:
     environment:
       - MEDIA_MANAGER_URL=https://ceol.l42.eu/
       - KEY_LUCOS_MEDIA_MANAGER
+      - KEY_LUCOS_PRIVATE
       - HOSTDOMAIN
+      - ENVIRONMENT
     devices:
       - /dev/snd
     restart: always

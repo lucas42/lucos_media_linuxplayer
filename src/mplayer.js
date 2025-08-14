@@ -114,10 +114,20 @@ async function updateCurrentAudio(data) {
 		await pauseTrack();
 	}
 }
+/**
+ * Inserts credentials into a track's url
+ */
+async function authenticateTrack(href) {
+	const url = new URL(href);
+	url.username = `lucos_media_linuxplayer-${process.env.ENVIRONMENT}`;
+	url.password = process.env.KEY_LUCOS_PRIVATE;
+	return url.href;
+}
 async function changeTrack(track) {
 	console.info(`Play track ${track.url} from ${track.currentTime} seconds`);
 	await mplayer.stdin.write('stop\n');
-	await mplayer.stdin.write(`loadfile "${track.url}" \n`);
+	const authenticatedUrl = await authenticateTrack(track.url);
+	await mplayer.stdin.write(`loadfile "${authenticatedUrl}" \n`);
 	status.isPlaying = true;
 	status.uuid = track.uuid;
 	if (track.currentTime > 0) {
