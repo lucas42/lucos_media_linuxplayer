@@ -62,11 +62,11 @@ function processData(buffer, isError) {
 			}
 			console.log(`Type of audio: ${match}`);
 		} else if(isError && data.startsWith("No stream found")) {
-			console.warn(`Track errored with "${data}" ${getCurrentTrack()}`);
+			console.warn(`Track errored with "${data}"`);
 			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
 			del(`v3/playlist/${playlist}/${status.uuid}?action=error`, data);
 		} else if(isError && (match = data.match(/^\[.*\](HTTP error.+)$/)?.[1])) {
-			console.warn(`Track errored with "${match}" ${getCurrentTrack()}`);
+			console.warn(`Track errored with "${match}"`);
 			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
 			del(`v3/playlist/${playlist}/${status.uuid}?action=error`, match);
 		} else {
