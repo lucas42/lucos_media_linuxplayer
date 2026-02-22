@@ -7,7 +7,7 @@ workflows:
     jobs:
      - lucos/build-arm64
      - lucos/deploy-salvare:
-       serial-group: << pipeline.project.slug >>/deploy-salvare
+        serial-group: << pipeline.project.slug >>/deploy-salvare
         requires:
           - lucos/build-arm64
         filters:
@@ -16,7 +16,7 @@ workflows:
               - main
      - lucos/build-armv7l
      - lucos/deploy-xwing:
-       serial-group: << pipeline.project.slug >>/deploy-xwing
+        serial-group: << pipeline.project.slug >>/deploy-xwing
         requires:
           - lucos/build-armv7l
         filters:
