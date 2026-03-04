@@ -69,6 +69,10 @@ function processData(buffer, isError) {
 			console.warn(`Track errored with "${match}"`);
 			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
 			del(`v3/playlist/${playlist}/${status.uuid}?action=error`, match);
+		} else if(isError && (match = data.match(/^FATAL:\s*(.+)$/)?.[1])) {
+			console.warn(`Track errored with fatal mplayer error: "${match}"`);
+			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
+			del(`v3/playlist/${playlist}/${status.uuid}?action=error`, match);
 		} else {
 			if (isError) console.warn(data);
 			else console.debug(data);
