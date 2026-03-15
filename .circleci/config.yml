@@ -5,20 +5,19 @@ workflows:
   version: 2
   build-deploy:
     jobs:
-     - lucos/build-arm64
+     - lucos/build-multiplatform
      - lucos/deploy-salvare:
         serial-group: << pipeline.project.slug >>/deploy-salvare
         requires:
-          - lucos/build-arm64
+          - lucos/build-multiplatform
         filters:
           branches:
             only:
               - main
-     - lucos/build-armv7l
      - lucos/deploy-xwing:
         serial-group: << pipeline.project.slug >>/deploy-xwing
         requires:
-          - lucos/build-armv7l
+          - lucos/build-multiplatform
         filters:
           branches:
             only:
