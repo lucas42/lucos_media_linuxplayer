@@ -165,4 +165,14 @@ async function updateTrackStatus() {
 	await put(`v3/playlist/${playlist}/${status.uuid}/current-time`, status.currentTime);
 }
 
+// Send periodic status updates to keep server-side position fresh
+setInterval(() => {
+	if (status.isPlaying && localDevice.isCurrent()) {
+		updateTrackStatus().catch(error => console.error("Error sending periodic status update", error));
+	}
+}, 10000);
+
+// Push position immediately when device becomes not-current
+listenExisting("device_notcurrent", () => updateTrackStatus().catch(error => console.error("Error sending status on device switch", error)));
+
 listenExisting("managerData", updateCurrentAudio, true);
