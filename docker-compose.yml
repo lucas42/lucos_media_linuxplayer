@@ -2,7 +2,7 @@ services:
   linuxplayer:
     build: .
     container_name: lucos_media_linuxplayer
-    image: lucas42/lucos_media_linuxplayer
+    image: lucas42/lucos_media_linuxplayer:${VERSION:-latest}
     environment:
       - MEDIA_MANAGER_URL=https://ceol.l42.eu/
       - KEY_LUCOS_MEDIA_MANAGER
