@@ -5,7 +5,8 @@ workflows:
   version: 2
   build-deploy:
     jobs:
-     - lucos/build-multiplatform
+     - lucos/build-multiplatform:
+        serial-group: << pipeline.project.slug >>/build
      - lucos/deploy-salvare:
         serial-group: << pipeline.project.slug >>/deploy-salvare
         requires:
