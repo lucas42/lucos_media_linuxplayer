@@ -9,7 +9,8 @@ workflows:
      - lucos/deploy-salvare:
         serial-group: << pipeline.project.slug >>/deploy-salvare
         requires:
-          - lucos/build-multiplatform
+          - lucos/build-multiplatform:
+          serial-group: << pipeline.project.slug >>/build
         filters:
           branches:
             only:
