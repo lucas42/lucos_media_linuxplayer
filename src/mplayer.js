@@ -9,6 +9,7 @@ const status = {
 	currentTime: 0, // How far the current track has progressed
 	isPlaying: false, // Whether mplayer is current playing a track
 	volume: null, // Value between 0 and 100 represent the volume used by mplayer (which has a non-linear relationship to the volume sent by lucos media manager)
+	playlistSlug: null, // The slug of the current playlist fetcher
 };
 
 function processTerminated(code, signal) {
@@ -52,7 +53,7 @@ function processData(buffer, isError) {
 				console.debug("Taking no action as track was proactively stopped");
 			} else {
 				console.info(`Track Finished ${status.url} with status ${match}.  [uuid: ${status.uuid}]`);
-				const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
+				const playlist = status.playlistSlug;
 				del(`v3/playlist/${playlist}/${status.uuid}?action=complete`);
 			}
 		} else if(match = data.match(/^Audio:\s(.+)/)?.[1]) {
@@ -63,15 +64,15 @@ function processData(buffer, isError) {
 			console.log(`Type of audio: ${match}`);
 		} else if(isError && data.startsWith("No stream found")) {
 			console.warn(`Track errored with "${data}"`);
-			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
+			const playlist = status.playlistSlug;
 			del(`v3/playlist/${playlist}/${status.uuid}?action=error`, data);
 		} else if(isError && (match = data.match(/^\[.*\](HTTP error.+)$/)?.[1])) {
 			console.warn(`Track errored with "${match}"`);
-			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
+			const playlist = status.playlistSlug;
 			del(`v3/playlist/${playlist}/${status.uuid}?action=error`, match);
 		} else if(isError && (match = data.match(/^FATAL:\s*(.+)$/)?.[1])) {
 			console.warn(`Track errored with fatal mplayer error: "${match}"`);
-			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
+			const playlist = status.playlistSlug;
 			del(`v3/playlist/${playlist}/${status.uuid}?action=error`, match);
 		} else {
 			if (isError) console.warn(data);
@@ -99,6 +100,7 @@ mplayer.on('exit', processTerminated);
 
 
 async function updateCurrentAudio(data) {
+	status.playlistSlug = data.currentCollectionSlug;
 	const now = data.tracks[0];
 	const shouldPlay = data.isPlaying && localDevice.isCurrent();
 	if (shouldPlay) {
@@ -161,7 +163,7 @@ async function setVolume(volume) {
 
 async function updateTrackStatus() {
 	if (!status.uuid) return;
-	const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
+	const playlist = status.playlistSlug;
 	await put(`v3/playlist/${playlist}/${status.uuid}/current-time`, status.currentTime);
 }
 
