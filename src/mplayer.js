@@ -9,6 +9,8 @@ const status = {
 	currentTime: 0, // How far the current track has progressed
 	isPlaying: false, // Whether mplayer is current playing a track
 	volume: null, // Value between 0 and 100 represent the volume used by mplayer (which has a non-linear relationship to the volume sent by lucos media manager)
+	lastCodecError: null, // { message, timestamp } — set when mpg123 emits a stream error; used to distinguish codec aborts from natural EOF
+	playStartTime: null, // Date.now() when mplayer starts playing the current track
 };
 
 function processTerminated(code, signal) {
@@ -37,6 +39,8 @@ function processData(buffer, isError) {
 		if(match = data.match(/^Playing\s(.{1,})\./)?.[1]) {
 			status.isPlaying = true;
 			status.url = match;
+			status.lastCodecError = null;
+			status.playStartTime = Date.now();
 			console.info(`Playing track ${status.url}`);
 		} else if(match = data.match(/^A:\s*([\d\.]+)\s*/)?.[1]) {
 			if (match) {
@@ -45,15 +49,24 @@ function processData(buffer, isError) {
 				console.warn(`Can't match time update: ${data}`);
 			}
 		} else if(match = data.match(/^EOF code:\s*(\d+)/)?.[1]) {
-			console.debug(`Track ended with code ${match}`);
+			const durationMs = status.playStartTime ? Date.now() - status.playStartTime : null;
+			const durationStr = durationMs !== null ? `${Math.round(durationMs / 1000)}s` : 'unknown duration';
 			status.isPlaying = false;
 			if (match == "4") {
-				// Don't take action in response to a procative stop command
+				// Don't take action in response to a proactive stop command
 				console.debug("Taking no action as track was proactively stopped");
 			} else {
-				console.info(`Track Finished ${status.url} with status ${match}.  [uuid: ${status.uuid}]`);
+				const recentCodecError = status.lastCodecError
+					&& (Date.now() - status.lastCodecError.timestamp) < 2000;
 				const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
-				del(`v3/playlist/${playlist}/${status.uuid}?action=complete`);
+				if (recentCodecError) {
+					console.warn(`Track aborted after ${durationStr} (EOF code ${match}) due to codec error: ${status.lastCodecError.message}  [uuid: ${status.uuid}]`);
+					del(`v3/playlist/${playlist}/${status.uuid}?action=error`, status.lastCodecError.message);
+				} else {
+					console.info(`Track Finished ${status.url} after ${durationStr} with status ${match} (end-of-stream).  [uuid: ${status.uuid}]`);
+					del(`v3/playlist/${playlist}/${status.uuid}?action=complete`);
+				}
+				status.lastCodecError = null;
 			}
 		} else if(match = data.match(/^Audio:\s(.+)/)?.[1]) {
 			if (match === "no sound") {
@@ -73,6 +86,9 @@ function processData(buffer, isError) {
 			console.warn(`Track errored with fatal mplayer error: "${match}"`);
 			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
 			del(`v3/playlist/${playlist}/${status.uuid}?action=error`, match);
+		} else if(isError && data.match(/^mpg123.*(?:Error reading|cannot reopen)/i)) {
+			status.lastCodecError = { message: data, timestamp: Date.now() };
+			console.warn(`Codec error: ${data}`);
 		} else {
 			if (isError) console.warn(data);
 			else console.debug(data);
