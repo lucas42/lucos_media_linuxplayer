@@ -105,6 +105,8 @@ const mplayerArgs = [
 	'-msglevel', 'global=6', '-msglevel', 'cplayer=4', // Set the verbosity of mplayer logging
 	'-slave', '-idle', // Tell mplayer to read commands from stdin, rather than keyboard events.  Also, don't quit while waiting for new commands
 	'-nolirc', // Disable infrared remote control support to avoid warnings in logs
+	'-cache', '16384', // 16 MB cache — largest track on the estate is ~12 MB, so this covers the whole file in RAM
+	'-cache-min', '80', // Start playback once cache is 80% full — eliminates mid-playback Range requests and the cache-pointer mishap that causes mpg123 failures
 ]
 
 const mplayer = spawn('mplayer', mplayerArgs, { env: mplayerEnv });
