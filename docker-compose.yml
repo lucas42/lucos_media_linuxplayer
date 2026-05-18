@@ -9,6 +9,7 @@ services:
       - KEY_LUCOS_PRIVATE
       - HOSTDOMAIN
       - ENVIRONMENT
+      - SYSTEM
     devices:
       - /dev/snd
     restart: always
