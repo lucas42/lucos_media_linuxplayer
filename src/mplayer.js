@@ -13,6 +13,34 @@ const status = {
 	playStartTime: null, // Date.now() when mplayer starts playing the current track
 };
 
+// Tracks how many consecutive track errors have occurred without a successful completion.
+// Used to compute exponential backoff delays before reporting errors to the server,
+// preventing rapid-fire error storms when the audio driver or network is broken.
+let consecutiveErrors = 0;
+
+function sleep(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Report a track error to the server with exponential backoff.
+ *
+ * First error in a sequence is reported immediately; subsequent consecutive errors
+ * are delayed by 2^(n-1) seconds (1 s, 2 s, 4 s, … capped at 30 s).
+ * The counter resets when a track completes successfully.
+ */
+async function reportTrackError(playlist, uuid, reason) {
+	consecutiveErrors++;
+	const backoffMs = consecutiveErrors > 1
+		? Math.min(Math.pow(2, consecutiveErrors - 2) * 1000, 30000)
+		: 0;
+	if (backoffMs > 0) {
+		console.warn(`Backing off ${backoffMs}ms before reporting track error (${consecutiveErrors} consecutive errors)`);
+		await sleep(backoffMs);
+	}
+	del(`v3/playlist/${playlist}/${uuid}?action=error`, reason);
+}
+
 function processTerminated(code, signal) {
 	if (code) {
 		console.error(`mplayer quit with error code ${code} / ${signal}`);
@@ -61,9 +89,10 @@ function processData(buffer, isError) {
 				const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
 				if (recentCodecError) {
 					console.warn(`Track aborted after ${durationStr} (EOF code ${match}) due to codec error: ${status.lastCodecError.message}  [uuid: ${status.uuid}]`);
-					del(`v3/playlist/${playlist}/${status.uuid}?action=error`, status.lastCodecError.message);
+					reportTrackError(playlist, status.uuid, status.lastCodecError.message);
 				} else {
 					console.info(`Track Finished ${status.url} after ${durationStr} with status ${match} (end-of-stream).  [uuid: ${status.uuid}]`);
+					consecutiveErrors = 0;
 					del(`v3/playlist/${playlist}/${status.uuid}?action=complete`);
 				}
 				status.lastCodecError = null;
@@ -77,15 +106,15 @@ function processData(buffer, isError) {
 		} else if(isError && data.startsWith("No stream found")) {
 			console.warn(`Track errored with "${data}"`);
 			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
-			del(`v3/playlist/${playlist}/${status.uuid}?action=error`, data);
+			reportTrackError(playlist, status.uuid, data);
 		} else if(isError && (match = data.match(/^\[.*\](HTTP error.+)$/)?.[1])) {
 			console.warn(`Track errored with "${match}"`);
 			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
-			del(`v3/playlist/${playlist}/${status.uuid}?action=error`, match);
+			reportTrackError(playlist, status.uuid, match);
 		} else if(isError && (match = data.match(/^FATAL:\s*(.+)$/)?.[1])) {
 			console.warn(`Track errored with fatal mplayer error: "${match}"`);
 			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
-			del(`v3/playlist/${playlist}/${status.uuid}?action=error`, match);
+			reportTrackError(playlist, status.uuid, match);
 		} else if(isError && data.match(/^mpg123.*(?:Error reading|cannot reopen)/i)) {
 			status.lastCodecError = { message: data, timestamp: Date.now() };
 			console.warn(`Codec error: ${data}`);
