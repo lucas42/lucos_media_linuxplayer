@@ -93,8 +93,7 @@ function processData(buffer, isError) {
 				const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
 				if (recentCodecError) {
 					console.warn(`Track aborted after ${durationStr} (EOF code ${match}) due to codec error: ${status.lastCodecError.message}  [uuid: ${status.uuid}]`);
-					reportTrackError(playlist, status.uuid, status.lastCodecError.message)
-						.catch(error => console.error("Failed to report codec error to server", error));
+					reportTrackError(playlist, status.uuid, status.lastCodecError.message);
 				} else {
 					console.info(`Track Finished ${status.url} after ${durationStr} with status ${match} (end-of-stream).  [uuid: ${status.uuid}]`);
 					consecutiveErrors = 0;
@@ -112,18 +111,15 @@ function processData(buffer, isError) {
 		} else if(isError && data.startsWith("No stream found")) {
 			console.warn(`Track errored with "${data}"`);
 			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
-			reportTrackError(playlist, status.uuid, data)
-				.catch(error => console.error("Failed to report stream error to server", error));
+			reportTrackError(playlist, status.uuid, data);
 		} else if(isError && (match = data.match(/^\[.*\](HTTP error.+)$/)?.[1])) {
 			console.warn(`Track errored with "${match}"`);
 			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
-			reportTrackError(playlist, status.uuid, match)
-				.catch(error => console.error("Failed to report HTTP error to server", error));
+			reportTrackError(playlist, status.uuid, match);
 		} else if(isError && (match = data.match(/^FATAL:\s*(.+)$/)?.[1])) {
 			console.warn(`Track errored with fatal mplayer error: "${match}"`);
 			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
-			reportTrackError(playlist, status.uuid, match)
-				.catch(error => console.error("Failed to report fatal error to server", error));
+			reportTrackError(playlist, status.uuid, match);
 		} else if(isError && data.match(/^mpg123.*(?:Error reading|cannot reopen)/i)) {
 			status.lastCodecError = { message: data, timestamp: Date.now() };
 			console.warn(`Codec error: ${data}`);
