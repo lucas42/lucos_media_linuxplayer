@@ -38,7 +38,11 @@ async function reportTrackError(playlist, uuid, reason) {
 		console.warn(`Backing off ${backoffMs}ms before reporting track error (${consecutiveErrors} consecutive errors)`);
 		await sleep(backoffMs);
 	}
-	del(`v3/playlist/${playlist}/${uuid}?action=error`, reason);
+	try {
+		await del(`v3/playlist/${playlist}/${uuid}?action=error`, reason);
+	} catch (error) {
+		console.error(`Failed to report track error to server: ${error}`);
+	}
 }
 
 function processTerminated(code, signal) {
@@ -93,7 +97,8 @@ function processData(buffer, isError) {
 				} else {
 					console.info(`Track Finished ${status.url} after ${durationStr} with status ${match} (end-of-stream).  [uuid: ${status.uuid}]`);
 					consecutiveErrors = 0;
-					del(`v3/playlist/${playlist}/${status.uuid}?action=complete`);
+					del(`v3/playlist/${playlist}/${status.uuid}?action=complete`)
+						.catch(error => console.error("Failed to report track completion to server", error));
 				}
 				status.lastCodecError = null;
 			}
