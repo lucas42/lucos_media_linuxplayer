@@ -18,6 +18,11 @@ const status = {
 // preventing rapid-fire error storms when the audio driver or network is broken.
 let consecutiveErrors = 0;
 
+// UUIDs for which an error report is currently in-flight (sleeping through backoff or awaiting the
+// DELETE response).  New calls for the same UUID return early rather than queuing up, preventing
+// the trickle→burst cascade that occurs when mplayer emits many error lines in rapid succession.
+const pendingErrorUuids = new Set();
+
 function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -28,20 +33,36 @@ function sleep(ms) {
  * First error in a sequence is reported immediately; subsequent consecutive errors
  * are delayed by 2^(n-1) seconds (1 s, 2 s, 4 s, … capped at 30 s).
  * The counter resets when a track completes successfully.
+ *
+ * De-duplication: if a report for this UUID is already in-flight, the call returns
+ * immediately.  This collapses the burst of error callbacks mplayer emits for a
+ * broken stream into a single DELETE, preventing the trickle→burst cascade.
+ *
+ * Track-advance guard: if the track advances before the backoff sleep expires, the
+ * pending report is silently dropped — the UUID is no longer the current track and
+ * there is nothing meaningful to report.
  */
 async function reportTrackError(playlist, uuid, reason) {
-	consecutiveErrors++;
-	const backoffMs = consecutiveErrors > 1
-		? Math.min(Math.pow(2, consecutiveErrors - 2) * 1000, 30000)
-		: 0;
-	if (backoffMs > 0) {
-		console.warn(`Backing off ${backoffMs}ms before reporting track error (${consecutiveErrors} consecutive errors)`);
-		await sleep(backoffMs);
-	}
+	if (pendingErrorUuids.has(uuid)) return;
+	pendingErrorUuids.add(uuid);
 	try {
+		consecutiveErrors++;
+		const backoffMs = consecutiveErrors > 1
+			? Math.min(Math.pow(2, consecutiveErrors - 2) * 1000, 30000)
+			: 0;
+		if (backoffMs > 0) {
+			console.warn(`Backing off ${backoffMs}ms before reporting track error (${consecutiveErrors} consecutive errors)`);
+			await sleep(backoffMs);
+			if (status.uuid !== uuid) {
+				console.debug(`Skipping error report for ${uuid} — track has advanced`);
+				return;
+			}
+		}
 		await del(`v3/playlist/${playlist}/${uuid}?action=error`, reason);
 	} catch (error) {
 		console.error(`Failed to report track error to server: ${error}`);
+	} finally {
+		pendingErrorUuids.delete(uuid);
 	}
 }
 
