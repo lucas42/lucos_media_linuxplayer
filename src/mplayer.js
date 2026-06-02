@@ -97,6 +97,11 @@ function processData(buffer, isError) {
 			console.info(`Playing track ${status.url}`);
 		} else if(match = data.match(/^A:\s*([\d\.]+)\s*/)?.[1]) {
 			if (match) {
+				const newTime = parseFloat(match);
+				const prevTime = parseFloat(status.currentTime);
+				if (!isNaN(prevTime) && newTime < prevTime) {
+					console.warn(`live-position regression: ${prevTime} → ${newTime} uuid=${status.uuid}`);
+				}
 				status.currentTime = match;
 			} else {
 				console.warn(`Can't match time update: ${data}`);
@@ -179,6 +184,8 @@ async function updateCurrentAudio(data) {
 			await changeTrack(now);
 		}
 		if (status.currentTime < now.currentTime) {
+			const delta = (now.currentTime - parseFloat(status.currentTime)).toFixed(2);
+			console.warn(`catch-up seek: ${status.currentTime} → ${now.currentTime} (Δ${delta}s) uuid=${status.uuid}`);
 			await mplayer.stdin.write(`seek ${now.currentTime} 2\n`); // According to docs; "2 is a seek to an absolute position of <value> seconds."
 		}
 		if (!status.isPlaying) {
@@ -207,6 +214,7 @@ async function changeTrack(track) {
 	await mplayer.stdin.write(`loadfile "${authenticatedUrl}" \n`);
 	status.isPlaying = true;
 	status.uuid = track.uuid;
+	status.currentTime = track.currentTime || 0; // Reset so A: updates from the new track don't look like regressions
 	if (track.currentTime > 0) {
 		await mplayer.stdin.write(`seek ${track.currentTime} 2\n`); // According to docs; "2 is a seek to an absolute position of <value> seconds."
 	}
