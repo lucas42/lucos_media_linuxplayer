@@ -2,6 +2,7 @@ import { listenExisting } from 'lucos_pubsub';
 import { put, del } from './manager.js';
 import localDevice from './local-device.js';
 import { spawn } from 'child_process';
+import { parseLine } from './mplayer-parse.js';
 
 
 const status = {
@@ -88,29 +89,25 @@ function processData(buffer, isError) {
 	allData.split("\n").forEach(singleLine => {
 		const data = singleLine.trim();
 		if (!data) return;
-		let match;
-		if(match = data.match(/^Playing\s(.{1,})\./)?.[1]) {
+		const event = parseLine(data, isError);
+		if (event.type === 'playing') {
 			status.isPlaying = true;
-			status.url = match;
+			status.url = event.url;
 			status.lastCodecError = null;
 			status.playStartTime = Date.now();
 			console.info(`Playing track ${status.url}`);
-		} else if(match = data.match(/^A:\s*([\d\.]+)\s*/)?.[1]) {
-			if (match) {
-				const newTime = parseFloat(match);
-				const prevTime = parseFloat(status.currentTime);
-				if (!isNaN(prevTime) && newTime < prevTime) {
-					console.warn(`live-position regression: ${prevTime} → ${newTime} uuid=${status.uuid}`);
-				}
-				status.currentTime = match;
-			} else {
-				console.warn(`Can't match time update: ${data}`);
+		} else if (event.type === 'time') {
+			const newTime = event.seconds;
+			const prevTime = parseFloat(status.currentTime);
+			if (!isNaN(prevTime) && newTime < prevTime) {
+				console.warn(`live-position regression: ${prevTime} → ${newTime} uuid=${status.uuid}`);
 			}
-		} else if(match = data.match(/^EOF code:\s*(\d+)/)?.[1]) {
+			status.currentTime = event.raw;
+		} else if (event.type === 'eof') {
 			const durationMs = status.playStartTime ? Date.now() - status.playStartTime : null;
 			const durationStr = durationMs !== null ? `${Math.round(durationMs / 1000)}s` : 'unknown duration';
 			status.isPlaying = false;
-			if (match == "4") {
+			if (event.code == "4") {
 				// Don't take action in response to a proactive stop command
 				console.debug("Taking no action as track was proactively stopped");
 			} else {
@@ -118,38 +115,39 @@ function processData(buffer, isError) {
 					&& (Date.now() - status.lastCodecError.timestamp) < 2000;
 				const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
 				if (recentCodecError) {
-					console.warn(`Track aborted after ${durationStr} (EOF code ${match}) due to codec error: ${status.lastCodecError.message}  [uuid: ${status.uuid}]`);
+					console.warn(`Track aborted after ${durationStr} (EOF code ${event.code}) due to codec error: ${status.lastCodecError.message}  [uuid: ${status.uuid}]`);
 					reportTrackError(playlist, status.uuid, status.lastCodecError.message);
 				} else {
-					console.info(`Track Finished ${status.url} after ${durationStr} with status ${match} (end-of-stream).  [uuid: ${status.uuid}]`);
+					console.info(`Track Finished ${status.url} after ${durationStr} with status ${event.code} (end-of-stream).  [uuid: ${status.uuid}]`);
 					consecutiveErrors = 0;
 					del(`v3/playlist/${playlist}/${status.uuid}?action=complete`)
 						.catch(error => console.error("Failed to report track completion to server", error));
 				}
 				status.lastCodecError = null;
 			}
-		} else if(match = data.match(/^Audio:\s(.+)/)?.[1]) {
-			if (match === "no sound") {
+		} else if (event.type === 'audio') {
+			if (event.format === "no sound") {
 				console.error("mplayer can't output any sound.  Exiting...");
 				process.exit(2);
 			}
-			console.log(`Type of audio: ${match}`);
-		} else if(isError && data.startsWith("No stream found")) {
-			console.warn(`Track errored with "${data}"`);
+			console.log(`Type of audio: ${event.format}`);
+		} else if (event.type === 'stream_error') {
+			console.warn(`Track errored with "${event.reason}"`);
 			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
-			reportTrackError(playlist, status.uuid, data);
-		} else if(isError && (match = data.match(/^\[.*\](HTTP error.+)$/)?.[1])) {
-			console.warn(`Track errored with "${match}"`);
+			reportTrackError(playlist, status.uuid, event.reason);
+		} else if (event.type === 'http_error') {
+			console.warn(`Track errored with "${event.reason}"`);
 			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
-			reportTrackError(playlist, status.uuid, match);
-		} else if(isError && (match = data.match(/^FATAL:\s*(.+)$/)?.[1])) {
-			console.warn(`Track errored with fatal mplayer error: "${match}"`);
+			reportTrackError(playlist, status.uuid, event.reason);
+		} else if (event.type === 'fatal_error') {
+			console.warn(`Track errored with fatal mplayer error: "${event.reason}"`);
 			const playlist = 'null'; // For now, the playlist slug isn't used (but needs to be part of the url).  Set it to null until there's an easier way to derive it.
-			reportTrackError(playlist, status.uuid, match);
-		} else if(isError && data.match(/^mpg123.*(?:Error reading|cannot reopen)/i)) {
-			status.lastCodecError = { message: data, timestamp: Date.now() };
-			console.warn(`Codec error: ${data}`);
+			reportTrackError(playlist, status.uuid, event.reason);
+		} else if (event.type === 'codec_error') {
+			status.lastCodecError = { message: event.message, timestamp: Date.now() };
+			console.warn(`Codec error: ${event.message}`);
 		} else {
+			// unknown — log at the appropriate level
 			if (isError) console.warn(data);
 			else console.debug(data);
 		}
