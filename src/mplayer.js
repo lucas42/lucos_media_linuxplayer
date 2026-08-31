@@ -3,13 +3,16 @@ import { put, del } from './manager.js';
 import localDevice from './local-device.js';
 import { spawn } from 'child_process';
 import { parseLine } from './mplayer-parse.js';
+import { decideVolumeWrite } from './volume-state.js';
 
 
 const status = {
 	url: null, // The URL of the track playing
 	currentTime: 0, // How far the current track has progressed
 	isPlaying: false, // Whether mplayer is current playing a track
-	volume: null, // Value between 0 and 100 represent the volume used by mplayer (which has a non-linear relationship to the volume sent by lucos media manager)
+	volume: null, // Value between 0 and 100 represent the volume mplayer has CONFIRMED applying (see audioReady) — not merely requested
+	desiredVolume: null, // Most recently requested volume (0-100) from the server, re-applied once audioReady flips true
+	audioReady: false, // Whether mplayer has emitted a `time` event for the current track — before this, a `volume` write may be silently dropped
 	lastCodecError: null, // { message, timestamp } — set when mpg123 emits a stream error; used to distinguish codec aborts from natural EOF
 	playStartTime: null, // Date.now() when mplayer starts playing the current track
 };
@@ -103,6 +106,15 @@ function processData(buffer, isError) {
 				console.warn(`live-position regression: ${prevTime} → ${newTime} uuid=${status.uuid}`);
 			}
 			status.currentTime = event.raw;
+			// First time event since changeTrack() means mplayer's audio chain is
+			// now genuinely up — reassert the last-requested volume so it isn't
+			// stuck on whatever the ALSA mixer was last left at (see #139).
+			if (!status.audioReady) {
+				status.audioReady = true;
+				if (status.desiredVolume !== null) {
+					setVolume(status.desiredVolume).catch(error => console.error("Failed to reassert volume once audio was ready", error));
+				}
+			}
 		} else if (event.type === 'eof') {
 			const durationMs = status.playStartTime ? Date.now() - status.playStartTime : null;
 			const durationStr = durationMs !== null ? `${Math.round(durationMs / 1000)}s` : 'unknown duration';
@@ -213,6 +225,7 @@ async function changeTrack(track) {
 	status.isPlaying = true;
 	status.uuid = track.uuid;
 	status.currentTime = track.currentTime || 0; // Reset so A: updates from the new track don't look like regressions
+	status.audioReady = false; // New track — don't trust status.volume as applied until mplayer confirms via a time event
 	if (track.currentTime > 0) {
 		await mplayer.stdin.write(`seek ${track.currentTime} 2\n`); // According to docs; "2 is a seek to an absolute position of <value> seconds."
 	}
@@ -227,14 +240,17 @@ async function pauseTrack() {
 	await updateTrackStatus();
 }
 async function setVolume(volume) {
-
-	// mplayer's volume doesn't sound linear, so do some maths to try to get it feeling more normal.
-	// (Also its volume is expressed as a percentage)
-	const normalisedVol = Math.pow(volume, 0.2) * 100;
-	if (status.volume === normalisedVol) return;
+	status.desiredVolume = volume;
+	const { normalisedVol, skipWrite, confirm } = decideVolumeWrite(status, volume);
+	if (skipWrite) return;
 	await mplayer.stdin.write(`volume ${normalisedVol} 1\n`); // Final argument here sets volume to absolute number, rather than relative
-	status.volume = normalisedVol;
-	console.info(`Volume at ${normalisedVol}%`);
+	// Only trust the write into the cache once mplayer's audio is confirmed up —
+	// otherwise this may be the command mplayer silently drops (see #139), and
+	// caching it anyway would stop it ever being retried.
+	if (confirm) {
+		status.volume = normalisedVol;
+		console.info(`Volume at ${normalisedVol}%`);
+	}
 }
 
 
