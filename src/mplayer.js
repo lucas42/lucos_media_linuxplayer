@@ -4,6 +4,7 @@ import localDevice from './local-device.js';
 import { spawn } from 'child_process';
 import { parseLine } from './mplayer-parse.js';
 import { decideVolumeWrite } from './volume-state.js';
+import { decidePlayback } from './playback-decision.js';
 
 
 const status = {
@@ -187,8 +188,7 @@ mplayer.on('exit', processTerminated);
 
 
 async function updateCurrentAudio(data) {
-	const now = data.tracks[0];
-	const shouldPlay = data.isPlaying && localDevice.isCurrent();
+	const { now, shouldPlay } = decidePlayback(data, localDevice.isCurrent());
 	if (shouldPlay) {
 		if (status.uuid !== now.uuid) {
 			await changeTrack(now);
