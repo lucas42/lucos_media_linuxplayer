@@ -4,7 +4,6 @@ import localDevice from './local-device.js';
 import { spawn } from 'child_process';
 import { parseLine } from './mplayer-parse.js';
 import { decideVolumeWrite } from './volume-state.js';
-import { decidePlayback } from './playback-decision.js';
 
 
 const status = {
@@ -188,7 +187,11 @@ mplayer.on('exit', processTerminated);
 
 
 async function updateCurrentAudio(data) {
-	const { now, shouldPlay } = decidePlayback(data, localDevice.isCurrent());
+	const now = data.tracks[0];
+	// Must have a track before we can play — an empty queue with isPlaying still
+	// true (e.g. after it drains, or a restore from mid-queue) falls through to
+	// pauseTrack() below instead of throwing on the unguarded dereference (#146).
+	const shouldPlay = Boolean(now) && data.isPlaying && localDevice.isCurrent();
 	if (shouldPlay) {
 		if (status.uuid !== now.uuid) {
 			await changeTrack(now);
